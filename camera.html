@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title></title>
+<link rel="stylesheet" href="default.css">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+body{}
+</style>
+</head>    
+<body>
+    <form>
+        Run:<input type=checkbox checked=true id="run">
+        <div style='font-size: 20em' id="center"></div>
+    </form>
+    <canvas id=canvas></canvas>
+<script>
+let first=true;
+getCameraData();
+
+async function getCameraData(){
+    let image=await fetchJSON();
+    drawImage(image);
+
+    document.getElementById("center").innerText=image[12*32+16]*9.0/5.0+32;
+
+    if(document.getElementById("run").checked){
+        getCameraData();
+    }
+}
+
+function tempToColor2(temperature){
+  const minT=-40;
+  const maxT=40;
+  t=temperature-minT;
+  range=maxT-minT;
+  r=0;
+  g=0;
+  b=0;
+
+  const ranges=5.0;
+  const colorRange=150;
+
+  if(t<range/ranges){
+    //blue
+    b=(t/(range/ranges))*colorRange+(255-colorRange);
+  } else if(t<range/ranges*2.0){
+    //green
+    t-=range/ranges;
+    g=(t/(range/ranges))*colorRange+(255-colorRange);
+  } else if(t<range/ranges*3.0){
+    //red
+    t-=range/ranges*2.0;
+    r=(t/(range/ranges))*colorRange+(255-colorRange);
+  } else if(t<range/ranges*4.0){
+    //red
+    t-=range/ranges*3.0;
+    r=(t/(range/ranges))*colorRange+(255-colorRange);
+    g=(t/(range/ranges))*colorRange+(255-colorRange);
+    
+  } else if(t<range/ranges*5.0){
+    //red
+    t-=range/ranges*4.0;
+    r=(t/(range/ranges))*colorRange+(255-colorRange);
+    b=(t/(range/ranges))*colorRange+(255-colorRange);
+    
+  }
+  const c="rgb("+r+","+g+","+b+")";
+  //console.log(temperature,c);
+  return c;
+}
+
+
+function tempToColor(t){
+    return tempToColor2(t);
+    let c=t-20;
+    return Math.floor(c)*10;
+}
+
+function drawImage(image){
+    if(first){
+        console.log(image);
+        first=false;
+    }
+    const canvas = document.getElementById("canvas");
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+    const ctx = canvas.getContext("2d");
+
+    const p=30;
+
+    for(let y=0;y<24;y++){
+        for(let x=0;x<32;x++){
+            ctx.beginPath();
+            const t=tempToColor(image[y*32+x])
+            ctx.fillStyle=t;
+            ctx.fillRect(x*p,y*p,p,p);
+            ctx.fill();
+        }
+    }
+
+}
+
+async function fetchJSON() {
+    const response = await fetch('http://10.1.1.133/camera');
+    const data = await response.json();
+    return data;
+}
+</script>
+</body>
+</html>
